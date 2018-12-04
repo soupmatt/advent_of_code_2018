@@ -1,4 +1,6 @@
-# Disclaimer, I followed along with @josevalim as he did his solution: https://www.twitch.tv/videos/344508213
+# Disclaimer, I followed along with @josevalim as he did his solution for puzzle 1
+# https://www.twitch.tv/videos/344508213
+# I did puzzle 2 on my own
 defmodule Day3 do
   @type claim :: String.t
   @type parsed_claim :: list
@@ -65,5 +67,33 @@ defmodule Day3 do
   @spec overlapped_inches([claim]) :: [coordinate]
   def overlapped_inches(claims) do
     for {coordinate, [_, _ | _]} <- claimed_inches(claims), do: coordinate
+  end
+
+  @doc """
+  Retrieves claims that don't have any overlap
+
+  ## Examples
+
+      iex> Day3.clean_claims([
+      ...>   "#1 @ 1,3: 4x4",
+      ...>   "#2 @ 3,1: 4x4",
+      ...>   "#3 @ 5,5: 2x2",
+      ...> ])
+      [3]
+  """
+  @spec clean_claims([claim]) :: [id]
+  def clean_claims(claims) do
+    {overlapped_ids, all_ids} = claimed_inches(claims)
+    |> Enum.reduce({MapSet.new(), MapSet.new()}, fn {_coord, ids}, {overlapped_ids, all_ids} ->
+      case ids do
+        [ id | [] ] ->
+          {overlapped_ids, MapSet.put(all_ids, id)}
+        _ ->
+          Enum.reduce(ids, {overlapped_ids, all_ids}, fn id, {overlapped_ids, all_ids} ->
+            {MapSet.put(overlapped_ids, id), MapSet.put(all_ids, id)}
+          end)
+      end
+    end)
+    MapSet.difference(all_ids, overlapped_ids) |> Enum.to_list()
   end
 end
