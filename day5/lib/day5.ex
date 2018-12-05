@@ -1,64 +1,32 @@
 defmodule Day5 do
   @doc """
-  collapse next match
-
-  ## Examples
-
-      iex> Day5.collapse_next_match("dabAcCaCBAcCcaDA")
-      {:ok, "dabAaCBAcCcaDA"}
-
-      iex> Day5.collapse_next_match("dabAaCBAcCcaDA")
-      {:ok, "dabCBAcCcaDA"}
-
-      iex> Day5.collapse_next_match("dabCBAcCcaDA")
-      {:ok, "dabCBAcaDA"}
-
-      iex> Day5.collapse_next_match("dabCBAcaDA")
-      :no_change
-
-      iex> Day5.collapse_next_match("q")
-      :no_change
-
-  """
-  @spec collapse_next_match(String.t()) :: {:ok, String.t()} | :no_change
-  def collapse_next_match(string) do
-    case collapse_next_match([], to_charlist(string), 0) do
-      x when is_atom(x) ->
-        x
-
-      x ->
-        {:ok, to_string(x)}
-    end
-  end
-
-  defp collapse_next_match(head, [a, b | rest], position) when a in ?a..?z and b in ?A..?Z do
-    if String.downcase(to_string([b])) == to_string([a]) do
-      Enum.reverse(head) ++ rest
-    else
-      collapse_next_match([a | head], [b | rest], position + 1)
-    end
-  end
-
-  defp collapse_next_match(head, [a, b | rest], position) when a in ?A..?A and b in ?a..?z do
-    if String.capitalize(to_string([b])) == to_string([a]) do
-      Enum.reverse(head) ++ rest
-    else
-      collapse_next_match([a | head], [b | rest], position + 1)
-    end
-  end
-
-  defp collapse_next_match(head, [a, b | rest], position) do
-    collapse_next_match([a | head], [b | rest], position + 1)
-  end
-
-  defp collapse_next_match(_, [_ | []], _) do
-    :no_change
-  end
-
-  @doc """
   collapse all matches in a string
 
   ## Examples
+
+      iex> Day5.collapse_string("aA")
+      ""
+
+      iex> Day5.collapse_string("Aa")
+      ""
+
+      iex> Day5.collapse_string("AA")
+      "AA"
+
+      iex> Day5.collapse_string("aa")
+      "aa"
+
+      iex> Day5.collapse_string("aaB")
+      "aaB"
+
+      iex> Day5.collapse_string("aAB")
+      "B"
+
+      iex> Day5.collapse_string("baA")
+      "b"
+
+      iex> Day5.collapse_string("baAB")
+      ""
 
       iex> Day5.collapse_string("dabAcCaCBAcCcaDA")
       "dabCBAcaDA"
@@ -68,13 +36,41 @@ defmodule Day5 do
 
   """
   @spec collapse_string(String.t()) :: String.t()
-  def collapse_string(input) do
-    case collapse_next_match(input) do
-      {:ok, result} ->
-        collapse_string(result)
+  def collapse_string(string) do
+    collapse_string([], String.to_charlist(string))
+  end
 
-      :no_change ->
-        input
+  defp collapse_string(acc, [a, b | rest]) when a in ?a..?z and b in ?A..?Z do
+    if String.downcase(to_string([b])) == to_string([a]) do
+      if match?([], acc) do
+        collapse_string(acc, rest)
+      else
+        [prev | new_acc] = acc
+        collapse_string(new_acc, [prev | rest])
+      end
+    else
+      collapse_string([a | acc], [b | rest])
     end
+  end
+
+  defp collapse_string(acc, [a, b | rest]) when b in ?a..?z and a in ?A..?Z do
+    if String.capitalize(to_string([b])) == to_string([a]) do
+      if match?([], acc) do
+        collapse_string(acc, rest)
+      else
+        [prev | new_acc] = acc
+        collapse_string(new_acc, [prev | rest])
+      end
+    else
+      collapse_string([a | acc], [b | rest])
+    end
+  end
+
+  defp collapse_string(acc, [a, b | rest]) do
+    collapse_string([a | acc], [b | rest])
+  end
+
+  defp collapse_string(acc, rest) do
+    to_string(Enum.reverse(acc) ++ rest)
   end
 end
