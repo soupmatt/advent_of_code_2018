@@ -73,4 +73,27 @@ defmodule Day5 do
   defp collapse_string(acc, rest) do
     to_string(Enum.reverse(acc) ++ rest)
   end
+
+  @doc """
+  Strip All Cases of a given character out of a string, case-insensitively
+
+  ## Examples
+
+      iex> Day5.strip_char("aA", ?a)
+      ""
+
+      iex> Day5.strip_char("aAb", ?a)
+      "b"
+
+      iex> Day5.strip_char("aAbcDrkaSDNefjEnsefAsa", ?a)
+      "bcDrkSDNefjEnsefs"
+
+  """
+  @spec strip_char(String.t, String.codepoint) :: String.t
+  def strip_char(string, to_remove) do
+    str = to_string([to_remove])
+    upper = String.capitalize(str)
+    lower = String.downcase(str)
+    String.replace(string, upper, "") |> String.replace(lower, "")
+  end
 end
