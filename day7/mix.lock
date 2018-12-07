@@ -1,0 +1,6 @@
+%{
+  "libgraph": {:hex, :libgraph, "0.13.3", "20732b7bafb933dcf7351c479e03076ebd14a85fd3202c67a1c197f4f7c2466b", [:mix], []},
+  "nimble_parsec": {:hex, :nimble_parsec, "0.4.0", "ee261bb53214943679422be70f1658fff573c5d0b0a1ecd0f18738944f818efe", [:mix], []},
+  "red_black_tree": {:hex, :red_black_tree, "1.2.0", "710776dc25a6f7a9cf19bc1fa15c2587fce6af180cb70a4ed0b1e6af93c1eb29", [:mix], []},
+  "sorted_set": {:hex, :sorted_set, "1.1.0", "b275f4021cbb2f82965422e1686c70efff03977d74ee5097522231881b7d93c5", [:mix], [{:red_black_tree, "~> 1.2", [hex: :red_black_tree, optional: false]}]},
+}
