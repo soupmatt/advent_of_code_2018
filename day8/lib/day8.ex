@@ -26,7 +26,7 @@ defmodule Day8 do
     sum_metadata(tree, 0)
   end
 
-  defp sum_metadata({child_count, metadata_count, child_nodes, metadata}, acc) do
+  defp sum_metadata({_, _, child_nodes, metadata}, acc) do
     acc = acc + Enum.sum(metadata)
     Enum.reduce(child_nodes, acc, &sum_metadata/2)
   end
