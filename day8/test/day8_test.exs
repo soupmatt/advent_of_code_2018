@@ -21,4 +21,16 @@ defmodule Day8Test do
 
     assert Day8.sum_metadata(nodeA) == 138
   end
+
+  test "node_value" do
+    nodeD = {0, 1, [], [99]}
+    nodeC = {1, 1, [nodeD], [2]}
+    nodeB = {0, 3, [], [10, 11, 12]}
+    nodeA = {2, 3, [nodeB, nodeC], [1, 1, 2]}
+
+    assert Day8.node_value(nodeD) == 99
+    assert Day8.node_value(nodeB) == 33
+    assert Day8.node_value(nodeC) == 0
+    assert Day8.node_value(nodeA) == 66
+  end
 end
