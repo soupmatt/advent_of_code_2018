@@ -135,40 +135,18 @@ defmodule Day11 do
     prev_power + x_power + y_power
   end
 
-  @doc """
-
-  ## Examples
-
-      iex> Day11.max_power_point(18)
-      {{90,269,16}, 113}
-
-      # iex> Day11.max_power_point(42)
-      # {{232,251,12}, 119}
-
-  """
   def max_power_point(grid_serial_number) do
-    {current_max_power, size} = max_power_for_location_by_size(1, 1, grid_serial_number)
-    max_power_point(grid_serial_number, {2, 1}, {1, 1, size}, current_max_power)
-  end
+    {:ok, result} =
+      for x <- 1..300, y <- 1..300 do
+        {x, y}
+      end
+      |> Task.async_stream(fn {x, y} ->
+        {power, size} = max_power_for_location_by_size(x, y, grid_serial_number)
+        {{x, y, size}, power}
+      end)
+      |> Enum.max_by(fn {:ok, {_, power}} -> power end)
 
-  defp max_power_point(grid_serial_number, {x, y}, current_max_point, current_max_power)
-       when x > 300 do
-    max_power_point(grid_serial_number, {1, y + 1}, current_max_point, current_max_power)
-  end
-
-  defp max_power_point(_grid_serial_number, {_x, y}, current_max_point, current_max_power)
-       when y > 300 do
-    {current_max_point, current_max_power}
-  end
-
-  defp max_power_point(grid_serial_number, {x, y}, current_max_point, current_max_power) do
-    {new_max_power, size} = max_power_for_location_by_size(x, y, grid_serial_number)
-
-    if new_max_power > current_max_power do
-      max_power_point(grid_serial_number, {x + 1, y}, {x, y, size}, new_max_power)
-    else
-      max_power_point(grid_serial_number, {x + 1, y}, current_max_point, current_max_power)
-    end
+    result
   end
 
   @doc """
