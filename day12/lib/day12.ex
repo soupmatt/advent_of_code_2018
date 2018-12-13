@@ -1,3 +1,6 @@
+# Caching of results and detecting that there was a cycle was heavily inspired by
+# https://github.com/sasa1977/aoc/blob/78b6d746d1653a281cbc5b7ed8528b235cc12586/lib/2018/day12.ex
+
 defmodule Day12 do
   import NimbleParsec
 
@@ -76,16 +79,58 @@ defmodule Day12 do
     end)
   end
 
-  def advance_generations(state, rules, count \\ 1, first_pot \\ 0)
+  def advance_generations(state, rules, count \\ 1, first_pot \\ 0, cache \\ %{})
 
-  def advance_generations(state, _rules, 0, pot) do
+  def advance_generations(state, _rules, 0, pot, _cache) do
     {state, pot}
   end
 
-  def advance_generations(state, rules, count, pot) when count > 0 do
-    {new_state, pot} = advance_generations1(state, rules, pot)
-    advance_generations(new_state, rules, count - 1, pot)
+  def advance_generations(old_state, rules, count, old_pot, cache) when count > 0 do
+    case transition(old_state, cache, count) do
+      {:cycle, cycle_steps, cycle_position_offset} ->
+        num_cycles = div(count, cycle_steps)
+        new_pot = old_pot + cycle_position_offset * num_cycles
+        advance_generations(old_state, rules, count - num_cycles * cycle_steps, new_pot, cache)
+
+      {new_state, steps, offset} ->
+        advance_generations(new_state, rules, count - steps, old_pot + offset, cache)
+
+      nil ->
+        {new_state, new_pot} = advance_generations1(old_state, rules, old_pot)
+
+        advance_generations(
+          new_state,
+          rules,
+          count - 1,
+          new_pot,
+          Map.put(cache, old_state, {new_state, new_pot - old_pot})
+        )
+    end
   end
+
+  defp transition(initial_state, cache, max_steps, steps \\ 0, offset \\ 0, current_state \\ nil)
+
+  defp transition(_initial_state, _cache, max_steps, max_steps, offset, current_state),
+    do: {current_state, max_steps, offset}
+
+  defp transition(initial_state, cache, max_steps, steps, offset, current_state) do
+    case Map.fetch(cache, current_state || initial_state) do
+      {:ok, {^initial_state, next_offset}} ->
+        {:cycle, steps + 1, offset + next_offset}
+
+      {:ok, {next_state, next_offset}} ->
+        transition(initial_state, cache, max_steps, steps + 1, offset + next_offset, next_state)
+
+      :error ->
+        if not is_nil(current_state), do: {current_state, steps, offset}, else: nil
+    end
+  end
+
+  defp trim_state({<<".", rest::binary>>, pot}) do
+    trim_state({rest, pot + 1})
+  end
+
+  defp trim_state(result), do: result
 
   defp advance_generations1(
          <<first::binary-size(1), second::binary-size(1), rest::binary>>,
@@ -159,7 +204,7 @@ defmodule Day12 do
         end
       end
 
-    {acc, pot}
+    trim_state({acc, pot})
   end
 
   @doc """
