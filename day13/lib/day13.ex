@@ -54,28 +54,53 @@ defmodule Day13 do
     end
   end
 
+  def find_last_car(cars, tracks) do
+    case next_tick(cars, tracks, [remove_cars: true]) do
+      {:ok, new_cars} ->
+        find_last_car(new_cars, tracks)
+
+      {:last_car, {y, x}} ->
+        {x, y}
+    end
+  end
+
+
   @spec next_tick(cars, tracks) :: {:ok, cars} | {:crash, coord}
-  def next_tick(cars, tracks) do
+  @spec next_tick(cars, tracks, [remove_cars: boolean]) :: {:ok, cars} | {:last_car, coord}
+  def next_tick(cars, tracks, options \\ []) do
     cars_to_run =
       Map.to_list(cars)
       |> Enum.sort_by(fn {coord, _} -> coord end)
 
-    next_tick(cars, tracks, cars_to_run)
+    next_tick(cars, tracks, cars_to_run, options)
   end
 
-  defp next_tick(cars, _tracks, []) do
+  defp next_tick(cars, _tracks, [], _options) when map_size(cars) == 1 do
+    {:last_car, Map.keys(cars) |> Enum.at(0)}
+  end
+
+  defp next_tick(cars, _tracks, [], _options) do
     {:ok, cars}
   end
 
-  defp next_tick(cars, tracks, [{coord, car} | cars_to_run]) do
-    cars = Map.delete(cars, coord)
-    {new_coord, new_car} = advance_car(coord, car, tracks)
+  defp next_tick(cars, tracks, [{coord, car} | cars_to_run], options) do
+    if Map.has_key?(cars, coord) do
+      cars = Map.delete(cars, coord)
+      {new_coord, new_car} = advance_car(coord, car, tracks)
 
-    if Map.has_key?(cars, new_coord) do
-      {:crash, new_coord}
+      if Map.has_key?(cars, new_coord) do
+        if Keyword.get(options, :remove_cars, false) do
+          cars = Map.delete(cars, new_coord)
+          next_tick(cars, tracks, cars_to_run, options)
+        else
+          {:crash, new_coord}
+        end
+      else
+        cars = Map.put(cars, new_coord, new_car)
+        next_tick(cars, tracks, cars_to_run, options)
+      end
     else
-      cars = Map.put(cars, new_coord, new_car)
-      next_tick(cars, tracks, cars_to_run)
+      next_tick(cars, tracks, cars_to_run, options)
     end
   end
 

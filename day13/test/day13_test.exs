@@ -149,4 +149,44 @@ defmodule Day13Test do
       assert Day13.next_tick(final_cars, tracks) == {:crash, {3, 7}}
     end
   end
+
+  describe "next_tick with remove_cars set" do
+    test "example tick 1" do
+      {input_cars, tracks} = from_fixture("example2_start")
+
+      {expected_cars, _} = from_fixture("example2_tick_1")
+
+      {:ok, result_cars} = Day13.next_tick(input_cars, tracks, [remove_cars: true])
+
+      assert strip_car_next_turns(result_cars) == strip_car_next_turns(expected_cars)
+    end
+
+    test "check each tick" do
+      {input_cars, tracks} = from_fixture("example2_start")
+
+      expected =
+        Enum.reduce(1..2, [], fn i, acc ->
+          {cars, _} = from_fixture("example2_tick_#{i}")
+          [strip_car_next_turns(cars) | acc]
+        end)
+        |> Enum.reverse()
+
+      {final_cars, 3} =
+        Enum.reduce(expected, {input_cars, 1}, fn expected_cars, {input_cars, tick} ->
+          case Day13.next_tick(input_cars, tracks, [remove_cars: true]) do
+            {:ok, new_cars} ->
+              assert strip_car_next_turns(new_cars) == expected_cars, "failed at tick #{tick}"
+              {new_cars, tick + 1}
+
+            {:crash, coord} ->
+              flunk("failed at tick #{tick} with a crash at coord #{inspect(coord)}")
+
+            {:last_car, coord} ->
+              flunk("failed at tick #{tick} with last car at coord #{inspect(coord)}")
+          end
+        end)
+
+      assert Day13.next_tick(final_cars, tracks, [remove_cars: true]) == {:last_car, {4, 6}}
+    end
+  end
 end
