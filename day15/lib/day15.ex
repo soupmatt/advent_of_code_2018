@@ -141,28 +141,44 @@ defmodule Day15 do
   end
 
   def choose_destination(board, valid_destinations, {_x, _y} = coord) do
-    choose_destination(board, valid_destinations, [[coord]])
+    choose_destination(board, valid_destinations, [[coord]], MapSet.new([coord]))
   end
 
-  def choose_destination(_board, _valid_destinations, []) do
+  def choose_destination(_board, _valid_destinations, [], _covered) do
     :no_moves
   end
 
-  def choose_destination(board, valid_destinations, chains) when is_list(chains) do
-    IO.puts "#{length(chains)} chains of length #{length(List.first(chains))}"
-    chains =
-      Enum.reduce(chains, [], fn [{x, y} | _] = chain, acc ->
-        [{x, y - 1}, {x - 1, y}, {x + 1, y}, {x, y + 1}]
-        |> Enum.reject(fn coord -> Map.has_key?(board, coord) or Enum.member?(chain, coord) end)
-        |> Enum.reduce(acc, fn coord, acc -> [[coord | chain] | acc] end)
+  def choose_destination(board, valid_destinations, chains, covered) when is_list(chains) do
+    {chains, covered} =
+      Enum.reduce(chains, {[], covered}, fn [{x, y} | _] = chain, {acc, covered} ->
+        next_coords =
+          [{x, y - 1}, {x - 1, y}, {x + 1, y}, {x, y + 1}]
+          |> Enum.reject(fn {x, y} -> x < 0 or y < 0 end)
+          |> Enum.reject(fn coord ->
+            Map.has_key?(board, coord) or MapSet.member?(covered, coord)
+          end)
+
+        case next_coords do
+          [] ->
+            {acc, covered}
+
+          next_coords ->
+            covered =
+              Enum.reduce(next_coords, covered, fn coord, acc -> MapSet.put(acc, coord) end)
+
+            acc = Enum.reduce(next_coords, acc, fn coord, acc -> [[coord | chain] | acc] end)
+            {acc, covered}
+        end
       end)
+
+    chains = sort_lists_by_reading_order(chains)
 
     matched_destinations =
       Enum.filter(chains, fn [head | _] -> MapSet.member?(valid_destinations, head) end)
 
     case matched_destinations do
       [] ->
-        choose_destination(board, valid_destinations, chains)
+        choose_destination(board, valid_destinations, chains, covered)
 
       dests ->
         case dests do
@@ -227,7 +243,6 @@ defmodule Day15 do
   end
 
   def run_unit_turn(board, units, coord) do
-    IO.puts "run turn for unit at #{inspect coord}"
     case Map.pop(board, coord) do
       {nil, _} ->
         {:ok, board}
@@ -276,7 +291,6 @@ defmodule Day15 do
 
   def run_round(board) do
     units = unit_turns(board)
-    IO.puts "#{length(units)} on the board"
 
     Enum.reduce_while(units, {:ok, board}, fn coord, {_, board} ->
       units = unit_turns(board)
