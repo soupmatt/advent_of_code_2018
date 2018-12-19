@@ -93,41 +93,19 @@ defmodule Day15Test do
     test "on initial input with Elf", %{turns: turns, input: input} do
       assert valid_destinations(turns, input, %Day15.Elf{}) ==
                MapSet.new([
-                 {1, 1},
-                 {3, 1},
-                 {2, 2},
-                 {5, 1},
-                 {3, 3},
-                 {2, 4},
-                 {3, 5}
+                 {2, 1},
+                 {5, 2},
+                 {5, 3},
+                 {3, 4}
                ])
     end
 
     test "on initial input with Goblin", %{turns: turns, input: input} do
       assert valid_destinations(turns, input, %Day15.Goblin{}) ==
                MapSet.new([
-                 {3, 2},
-                 {4, 1},
-                 {5, 5}
+                 {4, 2},
+                 {5, 4}
                ])
-    end
-
-    test "when a valid target can't be reached" do
-      board =
-        ~S"""
-        #######
-        #E....#
-        #...#E#
-        #...#G#
-        #######
-        """
-        |> parse_input()
-
-      dests =
-        unit_turns(board)
-        |> valid_destinations(board, %Day15.Elf{})
-
-      assert dests == :no_moves
     end
 
     test "when there are no valid Goblin targets left" do
@@ -183,9 +161,9 @@ defmodule Day15Test do
         unit_turns(board)
         |> valid_destinations(board, %Day15.Elf{})
 
-      assert dests == MapSet.new([{3, 1}, {5, 1}, {5, 2}])
+      assert dests == MapSet.new([{4, 1}, {5, 3}])
 
-      assert choose_destination(board, dests, {1, 1}) == [{2, 1}, {3, 1}]
+      assert choose_destination(board, dests, {1, 1}) == [{2, 1}, {3, 1}, {4, 1}]
     end
 
     test "with multiple choices" do
@@ -203,9 +181,9 @@ defmodule Day15Test do
         unit_turns(board)
         |> valid_destinations(board, %Day15.Elf{})
 
-      assert dests == MapSet.new([{3, 1}, {5, 1}, {2, 2}, {5, 2}, {1, 3}, {3, 3}])
+      assert dests == MapSet.new([{4, 1}, {2, 3}, {5, 3}])
 
-      assert choose_destination(board, dests, {1, 1}) == [{2, 1}, {3, 1}]
+      assert choose_destination(board, dests, {1, 1}) == [{2, 1}, {3, 1}, {4, 1}]
     end
 
     test "goes around a corner" do
@@ -223,7 +201,7 @@ defmodule Day15Test do
         unit_turns(board)
         |> valid_destinations(board, %Day15.Elf{})
 
-      assert dests == MapSet.new([{5, 1}])
+      assert dests == MapSet.new([{4, 1}])
 
       assert choose_destination(board, dests, {1, 1}) == [
                {2, 1},
@@ -233,7 +211,8 @@ defmodule Day15Test do
                {4, 3},
                {5, 3},
                {5, 2},
-               {5, 1}
+               {5, 1},
+               {4, 1}
              ]
     end
 
@@ -255,7 +234,7 @@ defmodule Day15Test do
         unit_turns(board)
         |> valid_destinations(board, %Day15.Elf{})
 
-      assert dests == MapSet.new([{5, 3}])
+      assert dests == MapSet.new([{4, 3}])
 
       assert choose_destination(board, dests, {1, 4}) == [
                {2, 4},
@@ -264,8 +243,32 @@ defmodule Day15Test do
                {4, 5},
                {5, 5},
                {5, 4},
-               {5, 3}
+               {5, 3},
+               {4, 3}
              ]
+    end
+
+    test "blocked" do
+      board =
+        ~S"""
+        #######
+        #.....#
+        #..##.#
+        #..#GE#
+        #E.##.#
+        #.....#
+        #.....#
+        #######
+        """
+        |> parse_input()
+
+      dests =
+        unit_turns(board)
+        |> valid_destinations(board, %Day15.Elf{})
+
+      assert dests == MapSet.new([{4, 3}])
+
+      assert choose_destination(board, dests, {1, 4}) == :no_moves
     end
 
     test "cant get there" do
@@ -286,7 +289,7 @@ defmodule Day15Test do
         unit_turns(board)
         |> valid_destinations(board, %Day15.Elf{})
 
-      assert dests == MapSet.new([{5, 3}])
+      assert dests == MapSet.new([{4, 3}])
 
       assert choose_destination(board, dests, {1, 4}) == :no_moves
     end

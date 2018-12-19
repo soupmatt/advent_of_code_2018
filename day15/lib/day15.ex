@@ -32,6 +32,10 @@ defmodule Day15 do
     end
   end
 
+  def enemies?(%l{}, %r{}) do
+    l != r
+  end
+
   def parse_input(string) do
     parse_input(string, %{}, 0, 0)
   end
@@ -73,61 +77,11 @@ defmodule Day15 do
     |> sort_coords_by_reading_order()
   end
 
-  def valid_destinations(turns, board, %Elf{}) do
-    result =
-      Enum.reduce(turns, MapSet.new(), fn coord, acc ->
-        case Map.get(board, coord) do
-          %Goblin{} ->
-            add_valid_destinations(acc, board, coord)
-
-          _ ->
-            acc
-        end
-      end)
-
-    if MapSet.size(result) == 0 do
-      if Enum.any?(Map.values(board), fn unit -> match?(%Goblin{}, unit) end) do
-        :no_moves
-      else
-        :no_targets
-      end
-    else
-      result
+  def valid_destinations(turns, board, unit) do
+    case Enum.filter(turns, fn u -> enemies?(Map.get(board, u), unit) end) do
+      [] -> :no_targets
+      targets -> MapSet.new(targets)
     end
-  end
-
-  def valid_destinations(turns, board, %Goblin{}) do
-    result =
-      Enum.reduce(turns, MapSet.new(), fn coord, acc ->
-        case Map.get(board, coord) do
-          %Elf{} ->
-            add_valid_destinations(acc, board, coord)
-
-          _ ->
-            acc
-        end
-      end)
-
-    if MapSet.size(result) == 0 do
-      if Enum.any?(Map.values(board), fn unit -> match?(%Elf{}, unit) end) do
-        :no_moves
-      else
-        :no_targets
-      end
-    else
-      result
-    end
-  end
-
-  defp add_valid_destinations(dests, board, {x, y}) do
-    [{x, y - 1}, {x - 1, y}, {x + 1, y}, {x, y + 1}]
-    |> Enum.reduce(dests, fn coord, acc ->
-      if Map.has_key?(board, coord) do
-        acc
-      else
-        MapSet.put(acc, coord)
-      end
-    end)
   end
 
   defp sort_coords_by_reading_order(coords) do
@@ -140,23 +94,31 @@ defmodule Day15 do
     |> Enum.sort_by(fn [{x, y} | _] -> {y, x} end)
   end
 
-  def choose_destination(board, valid_destinations, {_x, _y} = coord) do
-    choose_destination(board, valid_destinations, [[coord]], MapSet.new([coord]))
+  def valid_move?(board, coord, unit) do
+    case Map.get(board, coord) do
+      nil -> true
+      :wall -> false
+      occupant -> enemies?(occupant, unit)
+    end
   end
 
-  def choose_destination(_board, _valid_destinations, [], _covered) do
+  def choose_destination(board, valid_destinations, {_x, _y} = coord) do
+    unit = Map.get(board, coord)
+    choose_destination(board, valid_destinations, [[coord]], MapSet.new([coord]), unit)
+  end
+
+  def choose_destination(_board, _valid_destinations, [], _covered, _unit) do
     :no_moves
   end
 
-  def choose_destination(board, valid_destinations, chains, covered) when is_list(chains) do
+  def choose_destination(board, valid_destinations, chains, covered, unit) when is_list(chains) do
     {chains, covered} =
       Enum.reduce(chains, {[], covered}, fn [{x, y} | _] = chain, {acc, covered} ->
         next_coords =
           [{x, y - 1}, {x - 1, y}, {x + 1, y}, {x, y + 1}]
           |> Enum.reject(fn {x, y} -> x < 0 or y < 0 end)
-          |> Enum.reject(fn coord ->
-            Map.has_key?(board, coord) or MapSet.member?(covered, coord)
-          end)
+          |> Enum.filter(fn coord -> valid_move?(board, coord, unit) end)
+          |> Enum.reject(fn coord -> MapSet.member?(covered, coord) end)
 
         case next_coords do
           [] ->
@@ -178,7 +140,7 @@ defmodule Day15 do
 
     case matched_destinations do
       [] ->
-        choose_destination(board, valid_destinations, chains, covered)
+        choose_destination(board, valid_destinations, chains, covered, unit)
 
       dests ->
         case dests do
