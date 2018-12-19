@@ -463,7 +463,7 @@ defmodule Day15Test do
     end
   end
 
-  describe "advance_round" do
+  describe "run_round" do
     setup do
       raw_input = ~S"""
       #######
@@ -950,6 +950,76 @@ defmodule Day15Test do
       board = parse_input(raw_input)
 
       assert {_, 46, 39514} = fight!(board)
+    end
+
+    test "example 4" do
+      raw_input = ~S"""
+      #######
+      #E.G#.#
+      #.#G..#
+      #G.#.G#
+      #G..#.#
+      #...E.#
+      #######
+      """
+
+      board = parse_input(raw_input)
+
+      assert {_, 35, 27755} = fight!(board)
+    end
+
+    test "example 5" do
+      raw_input = ~S"""
+      #######
+      #.E...#
+      #.#..G#
+      #.###.#
+      #E#G#G#
+      #...#G#
+      #######
+      """
+
+      board = parse_input(raw_input)
+
+      assert {_, 54, 28944} = fight!(board)
+    end
+
+    test "example 6" do
+      raw_input = ~S"""
+      #########
+      #G......#
+      #.E.#...#
+      #..##..G#
+      #...##..#
+      #...#...#
+      #.G...G.#
+      #.....G.#
+      #########
+      """
+
+      board = parse_input(raw_input)
+
+      assert {_, 20, 18740} = fight!(board)
+    end
+  end
+
+  describe "print_board" do
+    test "one example" do
+      raw_input = ~S"""
+      #########
+      #G......#
+      #.E.#...#
+      #..##..G#
+      #...##..#
+      #...#...#
+      #.G...G.#
+      #.....G.#
+      #########
+      """
+
+      board = parse_input(raw_input)
+
+      assert print_board(board) == raw_input
     end
   end
 end

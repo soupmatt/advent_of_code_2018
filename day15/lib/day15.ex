@@ -291,6 +291,19 @@ defmodule Day15 do
   def fight!(board) do
     {board, count} = fight!(board, 0)
 
+    score = score_fight(board, count)
+
+    {board, count, score}
+  end
+
+  defp fight!(board, count) do
+    case run_round(board) do
+      {:ok, board} -> fight!(board, count + 1)
+      {:no_targets, board} -> {board, count}
+    end
+  end
+
+  def score_fight(board, count) do
     hp =
       Map.values(board)
       |> Enum.reduce(0, fn
@@ -301,16 +314,28 @@ defmodule Day15 do
           Unit.hp_remaining(unit) + acc
       end)
 
-    score = hp * count
-
-    {board, count, score}
+    hp * count
   end
 
-  defp fight!(board, count) do
-    IO.puts "round #{count}"
-    case run_round(board) do
-      {:ok, board} -> fight!(board, count + 1)
-      {:no_targets, board} -> {board, count}
-    end
+  def print_board(board) do
+    [{xinit, yinit} | coords] = Map.keys(board)
+
+    {xmin, xmax, ymin, ymax} =
+      Enum.reduce(coords, {xinit, xinit, yinit, yinit}, fn {x, y}, {xmin, xmax, ymin, ymax} ->
+        {min(x, xmin), max(x, xmax), min(y, ymin), max(y, ymax)}
+      end)
+
+    Enum.map(ymax..ymin, fn y ->
+      Enum.reduce(xmax..xmin, to_charlist("\n"), fn x, acc ->
+        case Map.get(board, {x, y}) do
+          :wall -> [?# | acc]
+          %Goblin{} -> [?G | acc]
+          %Elf{} -> [?E | acc]
+          nil -> [?. | acc]
+        end
+      end)
+      |> to_string()
+    end)
+    |> Enum.reduce(&<>/2)
   end
 end
