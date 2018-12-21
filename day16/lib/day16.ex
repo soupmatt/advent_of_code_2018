@@ -149,8 +149,8 @@ defmodule Day16 do
   end
 
   def parse_input(input) do
-    [trace, _program] = String.split(input, ~r/\n\n\n+/)
-    %{trace: parse_trace(trace), program: nil}
+    [trace, program] = String.split(input, ~r/\n\n\n+/)
+    %{trace: parse_trace(trace), program: parse_program(program)}
   end
 
   def parse_trace(input) do
@@ -191,6 +191,18 @@ defmodule Day16 do
     |> map({List, :to_tuple, []})
   )
 
+  defparsec(
+    :program_parser,
+    operation
+    |> concat(ignore(string("\n")))
+    |> repeat()
+  )
+
+  def parse_program(input) do
+    {:ok, program, _, _, _, _} = program_parser(input)
+    program
+  end
+
   defp instructions() do
     %{
       addr: &addr/4,
@@ -222,5 +234,55 @@ defmodule Day16 do
         acc
       end
     end)
+  end
+
+  def decifer_codes(traces) do
+    potential_codes =
+      Stream.map(traces, fn {_before, {code, _a, _b, _c}, _expected} = trace_element ->
+        {code, MapSet.new(Day16.test_trace(trace_element))}
+      end)
+      |> Enum.reduce(%{}, fn {code, new_ops}, acc ->
+        Map.update(acc, code, new_ops, fn ops ->
+          MapSet.intersection(ops, new_ops)
+        end)
+      end)
+
+    decifer_codes(%{}, potential_codes)
+  end
+
+  def decifer_codes(known_codes, %{} = potential) when map_size(potential) == 0 do
+    known_codes
+  end
+
+  def decifer_codes(known_codes, potential_codes) do
+    new_known_codes =
+      Enum.filter(potential_codes, fn {_code, ops} ->
+        MapSet.size(ops) == 1
+      end)
+      |> Enum.map(fn {code, ops} -> {code, MapSet.to_list(ops) |> List.first()} end)
+      |> Map.new()
+
+    ops_to_remove = Map.values(new_known_codes) |> MapSet.new()
+
+    potential_codes =
+      Map.drop(potential_codes, Map.keys(new_known_codes))
+      |> Enum.reduce(%{}, fn {code, ops}, acc ->
+        Map.put(acc, code, MapSet.difference(ops, ops_to_remove))
+      end)
+
+    known_codes = Map.merge(known_codes, new_known_codes)
+
+    decifer_codes(known_codes, potential_codes)
+  end
+
+  def run_program(traces, program) do
+    code_map = decifer_codes(traces)
+
+    instrs = instructions()
+
+    Enum.reduce(program, Day16.new_machine(), fn {code, a, b, c}, machine ->
+      instrs[code_map[code]].(machine, a, b, c)
+    end)
+    |> registers()
   end
 end

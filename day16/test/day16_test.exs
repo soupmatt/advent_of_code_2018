@@ -54,6 +54,24 @@ defmodule Day16Test do
     end
   end
 
+  describe "parse_program" do
+    test "a few lines" do
+      input = ~S"""
+      1 0 0 1
+      4 1 1 1
+      14 0 0 3
+      14 3 2 2
+      """
+
+      assert Day16.parse_program(input) == [
+               {1, 0, 0, 1},
+               {4, 1, 1, 1},
+               {14, 0, 0, 3},
+               {14, 3, 2, 2}
+             ]
+    end
+  end
+
   describe "test_trace" do
     test "first example" do
       assert Day16.test_trace({
